@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+import csv
+import sys
+import requests
+
+# Configuration
+API_KEY = "e+mCSGa_y9Qz2Er_cQHg"  # Replace with your actual API key
+API_SUBDOMAIN = "https://api.pagerduty.com"  # Replace with your PagerDuty API base URL
+CSV_FILE = "services.csv"  # Dynamically read any CSV file provided
+HEADERS = {
+    "Authorization": f"Token token={API_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+}
+
+def get_escalation_policy():
+    """Fetch the first escalation policy from PagerDuty."""
+    try:
+        response = requests.get(f"{API_SUBDOMAIN}/escalation_policies", headers=HEADERS)
+        response.raise_for_status()
+        policies = response.json().get("escalation_policies", [])
+        if policies:
+            return policies[0]["id"]  # Return the first policy ID
+        else:
+            print("Error: No escalation policies found.")
+            sys.exit(1)
+    except requests.RequestException as e:
+        print(f"Error retrieving escalation policies: {e}")
+        sys.exit(1)
+
+def create_service(service_type, name, description, auto_resolve_timeout, escalation_policy_id):
+    """Create a new service in PagerDuty."""
+    service_data = {
+        "service": {
+            "type": service_type,
+            "name": name,
+            "description": description,
+            "auto_resolve_timeout": int(auto_resolve_timeout) if auto_resolve_timeout else None,
+            "escalation_policy": {"id": escalation_policy_id, "type": "escalation_policy_reference"}
+        }
+    }
+    
+    try:
+        response = requests.post(f"{API_SUBDOMAIN}/services", json=service_data, headers=HEADERS)
+        if response.status_code == 201:
+            print(f"Successfully created service: {name}")
+        else:
+            print(f"Failed to create service {name}: {response.status_code} - {response.text}")
+    except requests.RequestException as e:
+        print(f"Failed to create service {name}: {e}")
+
+def bulk_create_services(csv_filename):
+    """Reads the CSV file and creates services in PagerDuty."""
+    escalation_policy_id = get_escalation_policy()
+    
+    try:
+        with open(csv_filename, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                create_service(
+                    service_type=row.get("type"),
+                    name=row.get("name"),
+                    description=row.get("description"),
+                    auto_resolve_timeout=row.get("auto_resolve_timeout"),
+                    escalation_policy_id=escalation_policy_id
+                )
+    except FileNotFoundError:
+        print(f"Error: File '{csv_filename}' not found.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error processing CSV: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    bulk_create_services(CSV_FILE)
