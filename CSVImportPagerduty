@@ -6,7 +6,7 @@ import sys
 import requests
 
 # Configuration
-API_KEY = "<Your API Key>"  # Replace with your actual API key
+API_KEY = "<Your API Key>"  # Replace with your actual API key 
 API_SUBDOMAIN = "https://api.pagerduty.com" 
 CSV_FILE = "services.csv"  
 HEADERS = {
