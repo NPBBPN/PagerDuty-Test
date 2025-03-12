@@ -3,6 +3,8 @@
 ## Prerequisites 
 This script requires 
 * Python 3 installed
+* * Requests Module installed
+   * `python -m pip install requests`
 * A correctly formatted .CSV file in order to Bulk create Services within PagerDuty via API.
 * A PagerDuty User/Account with Admin permissions
 * A Valid RestAPI Token to PagerDuty - PagerDuty > Integrations > Access Keys
